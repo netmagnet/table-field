@@ -7,6 +7,10 @@
           <div class="centering">
             <k-button icon="angle-left" v-bind:class="{ disabled: n == 1 }" @click="moveColumn(n-1, 'left')"></k-button>
             <k-button icon="remove" v-bind:class="{ disabled: columnCount <= minColumns }" @click="deleteColumn(n)"></k-button>
+            <k-button @click="alignColumn(n-1, 'left')">L</k-button>
+            <k-button @click="alignColumn(n-1, 'center')">C</k-button>
+            <k-button @click="alignColumn(n-1, 'right')">P</k-button>
+            <k-button icon="bold" @click="makeColumnBold(n-1)"></k-button>
             <k-button icon="angle-right" v-bind:class="{ disabled: n == columnCount }"  @click="moveColumn(n-1, 'right')"></k-button>
           </div>
         </div>
@@ -22,7 +26,18 @@
             <k-button icon="angle-up" v-bind:class="{ disabled: rowIndex == 0 }" @click="moveRow(rowIndex, 'up')"></k-button>
             <k-button icon="angle-down" v-bind:class="{ disabled: rowIndex == rowCount-1 }" @click="moveRow(rowIndex,	'down')"></k-button>
           </div>
-          <input class="row-cell input" :name="'name[table]['+ rowIndex +']'" v-model="row[cellIndex]" v-on:change="updateTable()" v-for="(cell, cellIndex) in row" />
+          <input class="row-cell input"
+                 v-bind:class="{
+                   bold: row[cellIndex].bold,
+                   'text-left': row[cellIndex].alignment === 'left',
+                   'text-center': row[cellIndex].alignment === 'center',
+                   'text-right': row[cellIndex].alignment === 'right',
+                 }"
+                 :name="'name[table]['+ rowIndex +']'"
+                 v-model="row[cellIndex].value"
+                 v-on:change="updateTable()"
+                 v-for="(cell, cellIndex) in row"
+          />
           <div class="row-ctrl delete-row">
             <k-button icon="remove" @click="deleteRow(rowIndex)" v-show="rowCount > 1"></k-button>
           </div>
@@ -95,7 +110,8 @@
           newValue = new Array();
           let insideValue = new Array();
           for(let i = 0; i < this.minColumns; i++){
-            insideValue.push("");
+            const emptyCell = this.emptyCell();
+            insideValue.push(emptyCell);
           }
           newValue.push(insideValue);
         }
@@ -103,6 +119,12 @@
       }
     },
     methods: {
+      emptyCell: function() {
+        return {
+          value: '',
+          bold: false,
+        }
+      },
       getData: function (value, defaultValues) {
         if (_.isEmpty(value)) {
           value = defaultValues;
@@ -110,8 +132,19 @@
         return value;
       },
       addRow: function () {
-        // Pushes an array of length columnCount filled with ''
-        this.betterVal.push(_.fill(Array(this.columnCount), ''));
+        const newRow = [];
+        for (let i = 0; i < this.columnCount; i++) {
+          const cell = this.emptyCell();
+          if (this.rowCount === 0) {
+            newRow[i] = cell;
+            continue;
+          }
+          const previousCol = this.betterVal[this.rowCount - 1][i];
+          cell.bold = previousCol.bold;
+          cell.alignment = previousCol.alignment;
+          newRow[i] = cell;
+        }
+        this.betterVal.push(newRow);
         this.updateTable();
       },
       deleteRow: function (rowNum) {
@@ -135,8 +168,9 @@
         this.updateTable();
       },
       addColumn: function () {
+        const emptyCell = this.emptyCell();
         _.forEach(this.betterVal, function (value) {
-          value.push("");
+          value.push(emptyCell);
         });
         this.updateTable();
       },
@@ -161,6 +195,37 @@
         }
         this.updateTable();
       },
+      makeColumnBold: function (colNum) {
+        if (this.rowCount === 0 || this.columnCount < colNum) {
+          return;
+        }
+        let columnIsBold = true;
+        _.forEach(this.betterVal, function (value) {
+          let cellValue = value[colNum];
+          if (cellValue && !cellValue.bold) {
+            columnIsBold = false;
+          }
+        });
+        _.forEach(this.betterVal, function (value) {
+          let cellValue = value[colNum];
+          if (cellValue) {
+            value[colNum].bold = !columnIsBold;
+          }
+        });
+        this.updateTable();
+      },
+      alignColumn: function(colNum, alignment) {
+        if (this.rowCount === 0 || this.columnCount < colNum) {
+          return;
+        }
+        _.forEach(this.betterVal, function (value) {
+          let cellValue = value[colNum];
+          if (cellValue) {
+            value[colNum].alignment = alignment;
+          }
+        });
+        this.updateTable();
+      },
       updateTable: function () {
         this.$emit('input', this.betterVal);
       }
@@ -169,5 +234,5 @@
 </script>
 
 <style lang="scss">
-  @import '../assets/scss/index.scss'
+  @import '../assets/scss/index.scss';
 </style>

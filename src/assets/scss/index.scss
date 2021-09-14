@@ -5,10 +5,24 @@ $add-field-hover:#81a2be;
     position: relative;
     width: 100%;
     height: 3rem;
-    padding-right: 0;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
     border: 1px solid $border-color;
     border-top-color: transparent;
     border-left-color: transparent;
+
+    &.bold {
+      font-weight: bold;
+    }
+    &.text-left {
+      text-align: left;
+    }
+    &.text-center {
+      text-align: center;
+    }
+    &.text-right {
+      text-align: right;
+    }
   }
   button {
     &.disabled {
@@ -29,7 +43,7 @@ $add-field-hover:#81a2be;
         border-left:1px solid $border-color;
       }
       .centering {
-        width:60px;
+        max-width: 170px;
         margin:0 auto;
       }
     }
